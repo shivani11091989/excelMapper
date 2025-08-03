@@ -1,0 +1,150 @@
+<div class="container" *ngIf="session">
+  <div class="preview-header">
+    <h1>Mapped Data Preview</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="goBackToMapping()">
+        Adjust Mapping
+      </button>
+      <button class="btn btn-secondary" (click)="goBackToMapping()">
+        Back to Mapping
+      </button>
+      <button class="btn btn-success" 
+              (click)="proceedToExport()"
+              [disabled]="!previewData || previewData.length === 0">
+        Export Results
+      </button>
+    </div>
+  </div>
+
+  <div class="preview-content" *ngIf="previewData && previewData.length > 0">
+    <!-- Data Table Preview -->
+    <div class="data-preview-section">
+      <h2>Data Preview (First 10 rows)</h2>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th *ngFor="let field of getTableHeaders()">
+                {{getFieldDisplayName(field)}}
+                <span class="required-indicator" *ngIf="isRequiredField(field)">*</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of previewData.slice(0, 10); let i = index">
+              <td *ngFor="let field of getTableHeaders()" 
+                  [class.empty-cell]="!row[field]"
+                  [class.error-cell]="hasError(i, field)">
+                {{formatCellValue(row[field])}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="table-info">
+        <p>Showing {{Math.min(10, previewData.length)}} of {{previewData.length}} rows</p>
+      </div>
+    </div>
+
+    <!-- Data Statistics -->
+    <div class="statistics-section">
+      <h2>Data Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{previewData.length}}</div>
+          <div class="stat-label">Total Records</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{getMappedFieldsCount()}}</div>
+          <div class="stat-label">Mapped Fields</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{getRequiredFieldsCount()}}</div>
+          <div class="stat-label">Required Fields</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{getCompletionRate()}}%</div>
+          <div class="stat-label">Data Completeness</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field Mapping Summary -->
+    <div class="mapping-summary-section">
+      <h2>Field Mapping Summary</h2>
+      <div class="mapping-summary-grid">
+        <div class="mapping-summary-item" 
+             *ngFor="let mapping of session.mappings"
+             [class.mapped]="mapping.excelColumn"
+             [class.required]="mapping.templateField.required">
+          <div class="mapping-info">
+            <div class="template-field">
+              <strong>{{mapping.templateField.displayName}}</strong>
+              <span class="required-indicator" *ngIf="mapping.templateField.required">*</span>
+            </div>
+            <div class="mapping-arrow" *ngIf="mapping.excelColumn">→</div>
+            <div class="excel-column" *ngIf="mapping.excelColumn">
+              {{mapping.excelColumn.name}}
+              <span class="ai-badge" *ngIf="mapping.isAiSuggested">AI</span>
+            </div>
+            <div class="not-mapped" *ngIf="!mapping.excelColumn">
+              Not Mapped
+            </div>
+          </div>
+          <div class="data-type-info">
+            <span class="data-type template-type">{{mapping.templateField.dataType}}</span>
+            <span class="data-type excel-type" *ngIf="mapping.excelColumn">
+              {{mapping.excelColumn.dataType}}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Quality Issues -->
+    <div class="quality-issues-section" *ngIf="qualityIssues.length > 0">
+      <h2>Data Quality Issues</h2>
+      <div class="issues-list">
+        <div class="issue-item" *ngFor="let issue of qualityIssues.slice(0, 10)">
+          <div class="issue-severity" [class]="issue.severity">
+            {{issue.severity.toUpperCase()}}
+          </div>
+          <div class="issue-details">
+            <strong>Row {{issue.row}}, {{issue.field}}:</strong>
+            {{issue.message}}
+            <div class="issue-value" *ngIf="issue.value !== null && issue.value !== undefined">
+              Value: "{{issue.value}}"
+            </div>
+          </div>
+        </div>
+      </div>
+      <p *ngIf="qualityIssues.length > 10" class="more-issues">
+        And {{qualityIssues.length - 10}} more issues...
+      </p>
+    </div>
+  </div>
+
+  <div class="no-data" *ngIf="!previewData || previewData.length === 0">
+    <h3>No Data to Preview</h3>
+    <p>Please ensure you have:</p>
+    <ul>
+      <li>Uploaded an Excel file</li>
+      <li>Mapped at least one column</li>
+      <li>The Excel file contains data rows</li>
+    </ul>
+    <button class="btn btn-primary" (click)="goBackToMapping()">
+      Go Back to Mapping
+    </button>
+  </div>
+</div>
+
+<div class="container" *ngIf="!session">
+  <div class="no-session">
+    <h2>No Active Session</h2>
+    <p>Please upload an Excel file first.</p>
+    <button class="btn btn-primary" (click)="goToUpload()">
+      Upload File
+    </button>
+  </div>
+</div>

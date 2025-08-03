@@ -1,0 +1,146 @@
+.upload-section {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.upload-title {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.upload-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  font-size: 1.1rem;
+}
+
+.upload-area {
+  border: 3px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+  border-color: var(--accent-color);
+  background: rgba(15, 52, 96, 0.1);
+  transform: translateY(-2px);
+}
+
+.upload-icon {
+  margin-bottom: 1.5rem;
+}
+
+.excel-icon {
+  font-size: 4rem;
+  display: block;
+}
+
+.upload-area h3 {
+  color: var(--text-color);
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.upload-btn {
+  font-size: 1.1rem;
+  padding: 1rem 2rem;
+}
+
+.progress-container {
+  margin-top: 2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.error-message {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 6px;
+  color: var(--error-color);
+}
+
+.file-info {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.file-info h4 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.file-details {
+  margin-bottom: 2rem;
+}
+
+.file-details p {
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+}
+
+.file-details strong {
+  color: var(--text-color);
+}
+
+.file-info button {
+  display: block;
+  margin: 0 auto;
+  font-size: 1.1rem;
+  padding: 1rem 2rem;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .upload-section {
+    padding: 1rem;
+  }
+
+  .upload-title {
+    font-size: 2rem;
+  }
+
+  .upload-area {
+    padding: 2rem 1rem;
+  }
+
+  .upload-area h3 {
+    font-size: 1.2rem;
+  }
+}

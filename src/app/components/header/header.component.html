@@ -1,0 +1,43 @@
+<header class="app-header">
+  <div class="header-container">
+    <div class="logo-section">
+      <div class="logo colorful-logo">
+        <span class="material-icons colorful-icon">grid_on</span>
+      </div>
+      <h1 class="app-title">ExcelMapperPro</h1>
+    </div>
+    <nav class="nav-bar">
+      <a routerLink="/upload" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-tab">
+        <span class="material-icons nav-icon upload">cloud_upload</span>
+        <span>Upload</span>
+      </a>
+      <a routerLink="/mapping" routerLinkActive="active" class="nav-tab" [class.disabled]="!hasActiveSession()">
+        <span class="material-icons nav-icon mapping">schema</span>
+        <span>Mapping</span>
+      </a>
+      <a routerLink="/ai-suggestions" routerLinkActive="active" class="nav-tab" [class.disabled]="!hasActiveSession()">
+        <span class="material-icons nav-icon ai">psychology</span>
+        <span>AI</span>
+      </a>
+      <a routerLink="/preview" routerLinkActive="active" class="nav-tab" [class.disabled]="!hasActiveSession()">
+        <span class="material-icons nav-icon preview">table_view</span>
+        <span>Preview</span>
+      </a>
+      <a routerLink="/export" routerLinkActive="active" class="nav-tab" [class.disabled]="!hasActiveSession()">
+        <span class="material-icons nav-icon export">file_download</span>
+        <span>Export</span>
+      </a>
+    </nav>
+    <div class="session-info" *ngIf="currentSession">
+      <div class="session-details">
+        <div class="file-name">{{currentSession.fileName}}</div>
+        <div class="session-stats">
+          {{currentSession.excelColumns.length}} columns • {{getMappedCount()}} mapped
+        </div>
+      </div>
+      <button class="btn btn-sm btn-secondary" (click)="clearSession()">
+        Clear Session
+      </button>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,110 @@
+<div class="container" *ngIf="session">
+  <div class="suggestions-header">
+    <h1>AI Mapping Suggestions</h1>
+    <p>Review and accept AI-generated column mappings</p>
+    <button class="btn btn-secondary regenerate-btn" (click)="regenerateSuggestions()">
+      Regenerate Suggestions
+    </button>
+  </div>
+
+  <div class="suggestions-list" *ngIf="suggestions.length > 0">
+    <div class="suggestion-item" *ngFor="let suggestion of suggestions; let i = index">
+      <div class="suggestion-content">
+        <div class="suggestion-info">
+          <h3>Suggestion {{i + 1}}: Map "{{suggestion.suggestedColumn.name}}" to "{{suggestion.templateField.displayName}}"</h3>
+          <div class="confidence-bar">
+            <span class="confidence-label">AI Confidence: {{suggestion.confidence | number:'1.0-0'}}%</span>
+            <div class="confidence-progress">
+              <div class="confidence-fill" 
+                   [style.width.%]="suggestion.confidence"
+                   [class.high-confidence]="suggestion.confidence >= 80"
+                   [class.medium-confidence]="suggestion.confidence >= 60 && suggestion.confidence < 80"
+                   [class.low-confidence]="suggestion.confidence < 60">
+              </div>
+            </div>
+          </div>
+          <p class="suggestion-reason">{{suggestion.reason}}</p>
+        </div>
+
+        <div class="suggestion-details">
+          <div class="column-details">
+            <h4>Excel Column</h4>
+            <div class="detail-card">
+              <p><strong>Name:</strong> {{suggestion.suggestedColumn.name}}</p>
+              <p><strong>Type:</strong> {{suggestion.suggestedColumn.dataType}}</p>
+              <div class="sample-data" *ngIf="suggestion.suggestedColumn.sampleData.length > 0">
+                <strong>Sample Data:</strong>
+                <div class="samples">
+                  <span class="sample" *ngFor="let sample of suggestion.suggestedColumn.sampleData.slice(0, 3)">
+                    {{sample}}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">→</div>
+
+          <div class="template-details">
+            <h4>Template Field</h4>
+            <div class="detail-card">
+              <p><strong>Name:</strong> {{suggestion.templateField.displayName}}</p>
+              <p><strong>Type:</strong> {{suggestion.templateField.dataType}}</p>
+              <p><strong>Required:</strong> {{suggestion.templateField.required ? 'Yes' : 'No'}}</p>
+              <p *ngIf="suggestion.templateField.description" class="description">
+                <strong>Description:</strong> {{suggestion.templateField.description}}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="suggestion-actions">
+          <button class="btn btn-success" 
+                  (click)="acceptSuggestion(suggestion)"
+                  [disabled]="isAccepted(suggestion)">
+            {{isAccepted(suggestion) ? 'Accepted' : 'Accept'}}
+          </button>
+          <button class="btn btn-secondary" (click)="overrideSuggestion(suggestion)">
+            Override
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-suggestions" *ngIf="suggestions.length === 0">
+    <div class="no-suggestions-content">
+      <h3>No AI Suggestions Available</h3>
+      <p>The AI couldn't find confident matches for your columns. You can:</p>
+      <ul>
+        <li>Go back to manual mapping</li>
+        <li>Try regenerating suggestions</li>
+        <li>Check if your column names are descriptive</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="suggestions-actions">
+    <button class="btn btn-secondary" (click)="goBackToMapping()">
+      Back to Mapping
+    </button>
+    <button class="btn btn-primary" 
+            (click)="acceptAllSuggestions()"
+            [disabled]="suggestions.length === 0 || allAccepted">
+      Accept All Suggestions
+    </button>
+    <button class="btn btn-success" (click)="proceedToPreview()">
+      Continue to Preview
+    </button>
+  </div>
+</div>
+
+<div class="container" *ngIf="!session">
+  <div class="no-session">
+    <h2>No Active Session</h2>
+    <p>Please upload an Excel file first.</p>
+    <button class="btn btn-primary" (click)="goToUpload()">
+      Upload File
+    </button>
+  </div>
+</div>

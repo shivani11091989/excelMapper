@@ -1,0 +1,120 @@
+<div class="page-container">
+  <div class="container">
+    <div class="page-header">
+      <h1>Upload Your Excel File</h1>
+      <p>Select an Excel file to begin the mapping process</p>
+    </div>
+
+  <div class="upload-section" *ngIf="!uploadedFile">
+    <div class="upload-area" 
+         [class.drag-over]="isDragOver"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onDrop($event)"
+         (click)="fileInput.click()">
+      
+      <div class="upload-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2Z" 
+                fill="currentColor" opacity="0.3"/>
+          <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M16 13H8M12 17V9" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+      
+      <div class="upload-text">
+        <h3>Drag & Drop or Click to Upload</h3>
+        <p>Select your Excel file to begin mapping</p>
+      </div>
+      
+      <button class="btn btn-primary upload-btn" type="button">
+        Choose File
+      </button>
+      
+      <input #fileInput 
+             type="file" 
+             accept=".xlsx,.xls" 
+             (change)="onFileSelected($event)"
+             style="display: none;">
+    </div>
+
+    <div class="upload-info">
+      <div class="info-item">
+        <strong>Maximum file size:</strong> 10MB
+      </div>
+      <div class="info-item">
+        <strong>Supported formats:</strong> Excel (.xlsx)
+      </div>
+      <div class="info-item">
+        <strong>Processing:</strong> Client-side (secure)
+      </div>
+    </div>
+  </div>
+
+  <!-- File Processing State -->
+  <div class="processing-section" *ngIf="isProcessing">
+    <div class="processing-animation">
+      <div class="spinner"></div>
+    </div>
+    <h3>Processing Your File...</h3>
+    <p>Analyzing columns and data types</p>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="processingProgress"></div>
+    </div>
+    <p class="progress-text">{{processingProgress}}% Complete</p>
+  </div>
+
+  <!-- File Upload Success -->
+  <div class="success-section" *ngIf="uploadedFile && !isProcessing">
+    <div class="success-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" fill="none"/>
+      </svg>
+    </div>
+    
+    <h3>File Uploaded Successfully!</h3>
+    
+    <div class="file-details">
+      <div class="file-info">
+        <div class="file-name">{{uploadedFile.name}}</div>
+        <div class="file-meta">
+          <span>{{formatFileSize(uploadedFile.size)}}</span>
+          <span>•</span>
+          <span>{{getColumnCount()}} columns</span>
+          <span>•</span>
+          <span>{{getRowCount()}} rows</span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="action-buttons">
+      <button class="btn btn-secondary" (click)="resetUpload()">
+        Upload Different File
+      </button>
+      <button class="btn btn-primary" (click)="proceedToMapping()">
+        Continue to Mapping
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-section" *ngIf="errorMessage">
+    <div class="error-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+        <path d="M15 9L9 15M9 9L15 15" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    
+    <h3>Upload Error</h3>
+    <p class="error-message">{{errorMessage}}</p>
+    
+    <div class="error-actions">
+      <button class="btn btn-primary" (click)="resetUpload()">
+        Try Again
+      </button>
+    </div>
+  </div>
+</div>

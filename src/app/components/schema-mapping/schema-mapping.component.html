@@ -1,0 +1,204 @@
+<div class="page-container" *ngIf="session">
+  <div class="container">
+    <div class="page-header">
+      <h1>Schema Mapping</h1>
+      <p>Map your Excel columns to the template fields</p>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="clearAllMappings()">
+          Clear All
+        </button>
+        <button class="btn btn-accent" (click)="getAiSuggestions()">
+          Get AI Suggestions
+        </button>
+      </div>
+    </div>
+
+    <div class="two-column-layout mapping-content">
+    <!-- Excel Columns Section -->
+    <div class="excel-columns-section">
+      <div class="section-header">
+        <h2>Uploaded File Columns</h2>
+        <span class="column-count">{{session.excelColumns.length}} columns</span>
+      </div>
+      
+      <div class="columns-list">
+        <div class="column-item" 
+             *ngFor="let column of session.excelColumns; let i = index"
+             [class.mapped]="isColumnMapped(column)"
+             draggable="true"
+             (dragstart)="onDragStart($event, column)">
+          
+          <div class="column-header">
+            <div class="column-name">{{column.name}}</div>
+            <div class="drag-handle">
+              <svg width="0" height="0" viewBox="0 0 24 24" fill="none">
+                <path d="M8 6H10V8H8V6ZM14 6H16V8H14V6ZM8 10H10V12H8V10ZM14 10H16V12H14V10ZM8 14H10V16H8V14ZM14 14H16V16H14V14Z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="column-details">
+            <div class="sample-data" *ngIf="column.sampleData.length > 0">
+              <strong>Sample:</strong>
+              <div class="samples">
+                <span class="sample" *ngFor="let sample of column.sampleData.slice(0, 3)">
+                  {{sample}}
+                </span>
+              </div>
+            </div>
+            <div class="column-stats">
+              <span>{{getColumnStats(column)}}</span>
+            </div>
+          </div>
+          
+          <div class="mapping-status" *ngIf="isColumnMapped(column)">
+            <span class="mapped-to">Mapped to: {{getMappedFieldName(column)}}</span>
+            <button class="btn-clear" (click)="clearColumnMapping(column)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Schema Section -->
+    <div class="template-schema-section">
+      <div class="section-header">
+        <h2>IAH Template Schema</h2>
+        <span class="field-count">{{session.mappings.length}} fields</span>
+      </div>
+      
+      <div class="schema-list">
+        <div class="schema-item" 
+             *ngFor="let mapping of session.mappings; let i = index"
+             [class.mapped]="mapping.excelColumn"
+             [class.required]="mapping.templateField.required"
+             [class.drag-over]="dragOverField === mapping.templateField.name"
+             (dragover)="onDragOver($event, mapping.templateField)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event, mapping.templateField)">
+          
+          <div class="schema-header">
+            <div class="field-info">
+              <div class="field-name">
+                {{mapping.templateField.displayName}}
+                <span class="required-indicator" *ngIf="mapping.templateField.required">*</span>
+              </div>
+            </div>
+            
+            <div class="mapping-controls">
+              <select class="mapping-dropdown" 
+                      [value]="mapping.excelColumn?.name || ''"
+                      (change)="onDropdownChange($event, mapping.templateField)">
+                <option value="">Select Column...</option>
+                <option *ngFor="let column of getAvailableColumns(mapping)" 
+                        [value]="column.name">
+                  {{column.name}} ({{column.dataType}})
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="field-description" *ngIf="mapping.templateField.description">
+            {{mapping.templateField.description}}
+          </div>
+          
+          <div class="mapping-preview" *ngIf="mapping.excelColumn">
+            <div class="preview-header">
+              <strong>Mapped to:</strong> {{mapping.excelColumn.name}}
+              <span class="ai-badge" *ngIf="mapping.isAiSuggested">AI</span>
+            </div>
+            <div class="preview-samples" *ngIf="mapping.excelColumn.sampleData.length > 0">
+              <span class="preview-sample" *ngFor="let sample of mapping.excelColumn.sampleData.slice(0, 2)">
+                {{sample}}
+              </span>
+            </div>
+            <div class="type-compatibility">
+              <span class="compatibility-indicator" 
+                    [class.compatible]="isTypeCompatible(mapping.excelColumn.dataType, mapping.templateField.dataType)"
+                    [class.incompatible]="!isTypeCompatible(mapping.excelColumn.dataType, mapping.templateField.dataType)">
+                {{mapping.excelColumn.dataType}} → {{mapping.templateField.dataType}}
+              </span>
+            </div>
+          </div>
+          
+          <div class="drop-zone" *ngIf="!mapping.excelColumn">
+            <div class="drop-zone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <span>Drop column here or use dropdown</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapping Summary -->
+  <div class="mapping-summary">
+    <div class="summary-stats">
+      <div class="stat-item">
+        <div class="stat-value">{{getMappedCount()}}</div>
+        <div class="stat-label">Mapped</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{getRequiredMappedCount()}}</div>
+        <div class="stat-label">Required</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{getUnmappedCount()}}</div>
+        <div class="stat-label">Unmapped</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">{{getCompletionPercentage()}}%</div>
+        <div class="stat-label">Complete</div>
+      </div>
+    </div>
+    
+    <div class="summary-actions">
+      <button class="btn btn-secondary" (click)="goBackToUpload()">
+        Back to Upload
+      </button>
+      <button class="btn btn-accent" 
+              (click)="proceedToAiSuggestions()"
+              [disabled]="getMappedCount() === 0">
+        AI Suggestions
+      </button>
+      <button class="btn btn-primary" 
+              (click)="proceedToPreview()"
+              [disabled]="!canProceedToPreview()">
+        Preview Data
+      </button>
+    </div>
+    </div>
+
+    <!-- Validation Messages -->
+    <div class="validation-messages" *ngIf="getValidationMessages().length > 0">
+      <h3>Mapping Issues:</h3>
+      <div class="message-list">
+        <div class="message-item" *ngFor="let message of getValidationMessages()">
+          <div class="message-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="message-text">{{message}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" *ngIf="!session">
+  <div class="no-session">
+    <h2>No Active Session</h2>
+    <p>Please upload an Excel file first.</p>
+    <button class="btn btn-primary" (click)="goToUpload()">
+      Upload File
+    </button>
+  </div>
+</div>

@@ -1,0 +1,401 @@
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--accent-color);
+}
+
+.preview-header h1 {
+  color: var(--text-color);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.data-preview-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.data-preview-section h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table th {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.required-indicator {
+  color: var(--error-color);
+  margin-left: 4px;
+}
+
+.empty-cell {
+  background: rgba(244, 67, 54, 0.1);
+  color: var(--error-color);
+  font-style: italic;
+}
+
+.error-cell {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--error-color);
+  font-weight: bold;
+}
+
+.table-info {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.statistics-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.statistics-section h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mapping-summary-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.mapping-summary-section h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.mapping-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.mapping-summary-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.mapping-summary-item.mapped {
+  border-color: var(--success-color);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.mapping-summary-item.required:not(.mapped) {
+  border-color: var(--error-color);
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.mapping-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.template-field {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.mapping-arrow {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.excel-column {
+  color: var(--success-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.not-mapped {
+  color: var(--error-color);
+  font-style: italic;
+}
+
+.ai-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.data-type-info {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.data-type {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.template-type {
+  background: var(--accent-color);
+  color: white;
+}
+
+.excel-type {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-secondary);
+}
+
+.quality-issues-section {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.quality-issues-section h2 {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.issue-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.issue-severity {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  min-width: 80px;
+  text-align: center;
+}
+
+.issue-severity.error {
+  background: var(--error-color);
+  color: white;
+}
+
+.issue-severity.warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+.issue-severity.info {
+  background: var(--info-color);
+  color: white;
+}
+
+.issue-details {
+  flex: 1;
+}
+
+.issue-details strong {
+  color: var(--text-color);
+}
+
+.issue-value {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.more-issues {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+.no-data {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.no-data h3 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.no-data p {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.no-data ul {
+  text-align: left;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.no-data li {
+  margin-bottom: 0.5rem;
+}
+
+.no-session {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.no-session h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.no-session p {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .preview-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .header-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mapping-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .issue-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .issue-severity {
+    align-self: flex-start;
+  }
+}

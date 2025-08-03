@@ -1,0 +1,146 @@
+<div class="container export-results" *ngIf="session">
+  <header class="export-header">
+    <div class="header-icon">
+      <span class="material-icons">check_circle</span>
+    </div>
+    <div class="header-content">
+      <h1>Export Complete</h1>
+      <p>Your data mapping is complete. See the summary below.</p>
+    </div>
+  </header>
+
+  <section class="summary-section" *ngIf="exportResult">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <span class="material-icons stat-icon success">done_all</span>
+        <div class="stat-label">Records Processed</div>
+        <div class="stat-value">{{exportResult.recordsProcessed | number}}</div>
+      </div>
+      <div class="summary-card">
+        <span class="material-icons stat-icon" [ngClass]="{'error': exportResult.errorsFound > 0, 'success': exportResult.errorsFound === 0}">error_outline</span>
+        <div class="stat-label">Errors Found</div>
+        <div class="stat-value" [ngClass]="{'error': exportResult.errorsFound > 0, 'success': exportResult.errorsFound === 0}">{{exportResult.errorsFound | number}}</div>
+      </div>
+      <div class="summary-card">
+        <span class="material-icons stat-icon" [ngClass]="{'success': exportResult.successRate >= 95, 'warning': exportResult.successRate >= 80 && exportResult.successRate < 95, 'error': exportResult.successRate < 80}">percent</span>
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value" [ngClass]="{'success': exportResult.successRate >= 95, 'warning': exportResult.successRate >= 80 && exportResult.successRate < 95, 'error': exportResult.successRate < 80}">{{exportResult.successRate | number:'1.1-1'}}%</div>
+      </div>
+    </div>
+
+    <div class="export-actions-group">
+      <button class="btn btn-primary" (click)="downloadCSV()" [disabled]="!exportResult.exportedData.length">
+        <span class="material-icons">download</span> CSV
+      </button>
+      <button class="btn btn-secondary" (click)="downloadXLSX()" [disabled]="!exportResult.exportedData.length">
+        <span class="material-icons">download</span> XLSX
+      </button>
+      <button class="btn btn-secondary" (click)="downloadJSON()" [disabled]="!exportResult.exportedData.length">
+        <span class="material-icons">download</span> JSON
+      </button>
+    </div>
+
+    <div class="export-info">
+      <span class="material-icons info-icon">info</span>
+      <span>Your file is ready for download in the desired format.</span>
+    </div>
+
+    <section class="export-details">
+      <h3>Export Details</h3>
+      <div class="details-grid">
+        <div class="detail-item">
+          <strong>Original File:</strong> {{session.fileName}}
+        </div>
+        <div class="detail-item">
+          <strong>Processed At:</strong> {{getCurrentDateTime()}}
+        </div>
+        <div class="detail-item">
+          <strong>Total Columns Mapped:</strong> {{getMappedColumnsCount()}}
+        </div>
+        <div class="detail-item">
+          <strong>Required Fields:</strong> {{getRequiredFieldsCount()}}
+        </div>
+      </div>
+    </section>
+
+    <section class="data-preview" *ngIf="exportResult.exportedData.length > 0">
+      <h3>Exported Data Preview (First 5 rows)</h3>
+      <div class="preview-table-container">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th *ngFor="let field of getExportedFields()">
+                {{getFieldDisplayName(field)}}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of exportResult.exportedData.slice(0, 5)">
+              <td *ngFor="let field of getExportedFields()">
+                {{formatValue(row[field])}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="errors-section" *ngIf="exportResult.errors.length > 0">
+      <h3>Data Processing Errors</h3>
+      <div class="errors-container">
+        <div class="error-item" *ngFor="let error of exportResult.errors.slice(0, 20)">
+          <div class="error-location">
+            <span class="material-icons error-icon">warning</span>
+            <strong>Row {{error.row}}</strong> - {{error.field}}
+          </div>
+          <div class="error-message">{{error.error}}</div>
+          <div class="error-value" *ngIf="error.value !== null && error.value !== undefined">
+            Value: "{{error.value}}"
+          </div>
+        </div>
+      </div>
+      <p *ngIf="exportResult.errors.length > 20" class="more-errors">
+        And {{exportResult.errors.length - 20}} more errors...
+      </p>
+    </section>
+  </section>
+
+  <nav class="navigation-actions" *ngIf="exportResult">
+    <button class="btn btn-secondary" (click)="startNewMapping()">
+      <span class="material-icons">autorenew</span> Start New Mapping
+    </button>
+    <button class="btn btn-secondary" (click)="goBackToPreview()">
+      <span class="material-icons">arrow_back</span> Back to Preview
+    </button>
+  </nav>
+
+  <section class="processing-state" *ngIf="!exportResult && !processingError">
+    <div class="processing-animation">
+      <div class="spinner"></div>
+    </div>
+    <h3>Processing Your Data...</h3>
+    <p>Please wait while we process and validate your mapped data.</p>
+  </section>
+
+  <section class="error-state" *ngIf="processingError">
+    <h3>Processing Error</h3>
+    <p>{{processingError}}</p>
+    <button class="btn btn-primary" (click)="retryProcessing()">
+      <span class="material-icons">refresh</span> Retry Processing
+    </button>
+    <button class="btn btn-secondary" (click)="goBackToPreview()">
+      <span class="material-icons">arrow_back</span> Back to Preview
+    </button>
+  </section>
+</div>
+
+<div class="container no-session" *ngIf="!session">
+  <div class="no-session-content">
+    <span class="material-icons no-session-icon">cloud_upload</span>
+    <h2>No Active Session</h2>
+    <p>Please upload an Excel file first.</p>
+    <button class="btn btn-primary" (click)="goToUpload()">
+      <span class="material-icons">upload_file</span> Upload File
+    </button>
+  </div>
+</div>
