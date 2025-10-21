@@ -55,10 +55,43 @@
           <strong>Processed At:</strong> {{getCurrentDateTime()}}
         </div>
         <div class="detail-item">
-          <strong>Total Columns Mapped:</strong> {{getMappedColumnsCount()}}
+          <strong>Total Fields:</strong> {{getTotalColumnsCount()}}
+        </div>
+        <div class="detail-item">
+          <strong>Mapped Fields:</strong> {{getMappedColumnsCount()}}
+        </div>
+        <div class="detail-item">
+          <strong>Unmapped Template Fields:</strong> {{getUnmappedColumnsCount()}}
+        </div>
+        <div class="detail-item">
+          <strong>Unmapped Excel Columns:</strong> {{getUnmappedExcelColumnsCount()}}
         </div>
         <div class="detail-item">
           <strong>Required Fields:</strong> {{getRequiredFieldsCount()}}
+        </div>
+      </div>
+      
+      <div class="fields-info" *ngIf="getUnmappedColumnsCount() > 0 || getUnmappedExcelColumnsCount() > 0">
+        <div class="unmapped-notice" *ngIf="getUnmappedColumnsCount() > 0">
+          <span class="material-icons notice-icon">warning</span>
+          <span><strong>Note:</strong> {{getUnmappedColumnsCount()}} unmapped template fields have been excluded from the export.</span>
+        </div>
+        <div class="unmapped-fields" *ngIf="getUnmappedColumnsCount() > 0">
+          <strong>Excluded Template Fields:</strong>
+          <span class="field-tag excluded-field" *ngFor="let field of getUnmappedFields(); let last = last">
+            {{field}}<span *ngIf="!last">, </span>
+          </span>
+        </div>
+        
+        <div class="unmapped-notice" *ngIf="getUnmappedExcelColumnsCount() > 0">
+          <span class="material-icons notice-icon">info</span>
+          <span><strong>Note:</strong> {{getUnmappedExcelColumnsCount()}} unmapped Excel columns have been included in the export with their original data.</span>
+        </div>
+        <div class="unmapped-fields" *ngIf="getUnmappedExcelColumnsCount() > 0">
+          <strong>Unmapped Excel Columns:</strong>
+          <span class="field-tag" *ngFor="let column of getUnmappedExcelColumns(); let last = last">
+            {{column}}<span *ngIf="!last">, </span>
+          </span>
         </div>
       </div>
     </section>

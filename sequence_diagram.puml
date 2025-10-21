@@ -1,0 +1,40 @@
+@startuml excel-mapper-sequence-diagram
+actor User
+participant "Frontend (React App)" as FE
+participant "Backend (Node.js / Express)" as BE
+participant "AI Service (Python)" as AI
+database Database as DB
+
+User -> FE: Upload File
+FE -> BE: POST /files/upload
+BE -> DB: Store file metadata
+DB --> BE: Ack
+BE --> FE: fileId
+
+FE -> BE: POST /schema/extract
+BE -> DB: Retrieve target schema
+DB --> BE: Target schema
+BE --> FE: Extracted headers
+
+FE -> BE: Request AI suggestions
+BE -> AI: Generate mapping suggestions
+AI --> BE: Suggestions
+BE --> FE: Suggestions
+
+User -> FE: Accept / Adjust Mapping
+FE -> BE: Save mapping
+BE -> DB: Persist mapping
+DB --> BE: Ack
+BE --> FE: Mapping saved
+
+FE -> BE: Validate mapping
+BE -> DB: Check schema rules
+DB --> BE: Validation results
+BE --> FE: Validation report
+
+User -> FE: Request Export
+FE -> BE: Export data
+BE -> DB: Fetch mapping & schema
+DB --> BE: Mapping + schema
+BE --> FE: Exported Excel file
+@enduml

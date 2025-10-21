@@ -81,10 +81,49 @@
   margin-left: 4px;
 }
 
+.unmapped-indicator {
+  color: var(--warning-color);
+  margin-left: 4px;
+  font-size: 0.9rem;
+  cursor: help;
+}
+
+.excel-column-indicator {
+  color: var(--success-color);
+  margin-left: 4px;
+  font-size: 0.9rem;
+  cursor: help;
+}
+
 .empty-cell {
   background: rgba(244, 67, 54, 0.1);
   color: var(--error-color);
   font-style: italic;
+}
+
+.unmapped-cell {
+  background: rgba(255, 193, 7, 0.1);
+  color: var(--warning-color);
+  font-style: italic;
+  position: relative;
+}
+
+.unmapped-cell::after {
+  content: " (unmapped)";
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.excel-column-cell {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+  position: relative;
+}
+
+.excel-column-cell::after {
+  content: " (Excel data)";
+  font-size: 0.8rem;
+  opacity: 0.7;
 }
 
 .error-cell {
@@ -206,6 +245,14 @@
 .not-mapped {
   color: var(--error-color);
   font-style: italic;
+}
+
+.not-mapped.excluded {
+  background: rgba(244, 67, 54, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
 .ai-badge {

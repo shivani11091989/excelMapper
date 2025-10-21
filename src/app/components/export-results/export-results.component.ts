@@ -58,13 +58,15 @@ export class ExportResultsComponent implements OnInit {
 
   downloadCSV(): void {
     if (this.exportResult) {
-      this.excelService.downloadAsCSV(this.exportResult.exportedData, this.getExportFileName('csv'));
+      const columnOrder = this.mappingService.getColumnOrder();
+      this.excelService.downloadAsCSV(this.exportResult.exportedData, this.getExportFileName('csv'), columnOrder);
     }
   }
 
   downloadExcel(): void {
     if (this.exportResult) {
-      this.excelService.downloadAsXLSX(this.exportResult.exportedData, this.getExportFileName('xlsx'));
+      const columnOrder = this.mappingService.getColumnOrder();
+      this.excelService.downloadAsXLSX(this.exportResult.exportedData, this.getExportFileName('xlsx'), columnOrder);
     }
   }
 
@@ -113,7 +115,7 @@ export class ExportResultsComponent implements OnInit {
 
   getTableHeaders(): string[] {
     if (!this.exportResult?.exportedData || this.exportResult.exportedData.length === 0) return [];
-    return Object.keys(this.exportResult.exportedData[0]);
+    return this.mappingService.getColumnOrder();
   }
 
   formatCellValue(value: any): string {
@@ -150,6 +152,16 @@ export class ExportResultsComponent implements OnInit {
     return this.session.mappings.filter(m => m.excelColumn).length;
   }
 
+  getUnmappedColumnsCount(): number {
+    if (!this.session) return 0;
+    return this.session.mappings.filter(m => !m.excelColumn).length;
+  }
+
+  getTotalColumnsCount(): number {
+    if (!this.session) return 0;
+    return this.session.mappings.length;
+  }
+
   getRequiredFieldsCount(): number {
     if (!this.session) return 0;
     return this.session.mappings.filter(m => m.templateField.required).length;
@@ -161,8 +173,37 @@ export class ExportResultsComponent implements OnInit {
 
   getFieldDisplayName(fieldName: string): string {
     if (!this.session) return fieldName;
+    
+    // Check if this is an unmapped Excel column (prefixed with 'excel_')
+    if (fieldName.startsWith('excel_')) {
+      const originalColumnName = fieldName.replace('excel_', '');
+      return `${originalColumnName} (Excel Column)`;
+    }
+    
     const mapping = this.session.mappings.find(m => m.templateField.name === fieldName);
     return mapping?.templateField.displayName || fieldName;
+  }
+
+  getUnmappedFields(): string[] {
+    if (!this.session) return [];
+    return this.session.mappings
+      .filter(m => !m.excelColumn)
+      .map(m => m.templateField.displayName);
+  }
+
+  getMappedFields(): string[] {
+    if (!this.session) return [];
+    return this.session.mappings
+      .filter(m => m.excelColumn)
+      .map(m => m.templateField.displayName);
+  }
+
+  getUnmappedExcelColumns(): string[] {
+    return this.mappingService.getUnmappedExcelColumns();
+  }
+
+  getUnmappedExcelColumnsCount(): number {
+    return this.getUnmappedExcelColumns().length;
   }
 
   retryProcessing(): void {

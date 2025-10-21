@@ -27,13 +27,15 @@
               <th *ngFor="let field of getTableHeaders()">
                 {{getFieldDisplayName(field)}}
                 <span class="required-indicator" *ngIf="isRequiredField(field)">*</span>
+                <span class="excel-column-indicator" *ngIf="field.startsWith('excel_')" title="This is an unmapped Excel column with original data">📄</span>
               </th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of previewData.slice(0, 10); let i = index">
               <td *ngFor="let field of getTableHeaders()" 
-                  [class.empty-cell]="!row[field]"
+                  [class.empty-cell]="!row[field] && !field.startsWith('excel_')"
+                  [class.excel-column-cell]="field.startsWith('excel_')"
                   [class.error-cell]="hasError(i, field)">
                 {{formatCellValue(row[field])}}
               </td>
@@ -56,8 +58,20 @@
           <div class="stat-label">Total Records</div>
         </div>
         <div class="stat-card">
+          <div class="stat-value">{{getTotalFieldsCount()}}</div>
+          <div class="stat-label">Total Fields</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-value">{{getMappedFieldsCount()}}</div>
           <div class="stat-label">Mapped Fields</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{getTotalFieldsCount() - getMappedFieldsCount()}}</div>
+          <div class="stat-label">Unmapped Template Fields (Excluded)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{getUnmappedExcelColumnsCount()}}</div>
+          <div class="stat-label">Unmapped Excel Columns</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">{{getRequiredFieldsCount()}}</div>
@@ -88,8 +102,8 @@
               {{mapping.excelColumn.name}}
               <span class="ai-badge" *ngIf="mapping.isAiSuggested">AI</span>
             </div>
-            <div class="not-mapped" *ngIf="!mapping.excelColumn">
-              Not Mapped
+            <div class="not-mapped excluded" *ngIf="!mapping.excelColumn">
+              Not Mapped (Excluded from Export)
             </div>
           </div>
           <div class="data-type-info">

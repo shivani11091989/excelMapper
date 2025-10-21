@@ -178,38 +178,52 @@ export class MappingService {
     const errors: ExportError[] = [];
     let recordsProcessed = 0;
 
+    // Separate mapped and unmapped fields for ordered processing
+    const mappedFields = session.mappings.filter(m => m.excelColumn);
+    const unmappedTemplateFields = session.mappings.filter(m => !m.excelColumn);
+    
+    // Find Excel columns that are not mapped to any template field
+    const mappedExcelColumnNames = mappedFields.map(m => m.excelColumn!.name);
+    const unmappedExcelColumns = session.excelColumns.filter(col => 
+      !mappedExcelColumnNames.includes(col.name)
+    );
+
     excelData.forEach((row, rowIndex) => {
       const mappedRow: any = {};
       let hasError = false;
 
-      session.mappings.forEach(mapping => {
-        if (mapping.excelColumn) {
-          const value = row[mapping.excelColumn.name];
-          
-          // Validate required fields
-          if (mapping.templateField.required && (value === undefined || value === null || value === '')) {
-            errors.push({
-              row: rowIndex + 1,
-              field: mapping.templateField.displayName,
-              error: 'Required field is empty',
-              value
-            });
-            hasError = true;
-          }
+      // Process mapped fields first (template fields with mapped Excel columns)
+      mappedFields.forEach(mapping => {
+        const value = row[mapping.excelColumn!.name];
+        
+        // Validate required fields
+        if (mapping.templateField.required && (value === undefined || value === null || value === '')) {
+          errors.push({
+            row: rowIndex + 1,
+            field: mapping.templateField.displayName,
+            error: 'Required field is empty',
+            value
+          });
+          hasError = true;
+        }
 
-          // Data type conversion and validation
-          try {
-            mappedRow[mapping.templateField.name] = this.convertValue(value, mapping.templateField.dataType);
-          } catch (error) {
-            errors.push({
-              row: rowIndex + 1,
-              field: mapping.templateField.displayName,
-              error: `Data type conversion failed: ${error}`,
-              value
-            });
-            hasError = true;
-          }
-        } else if (mapping.templateField.required) {
+        // Data type conversion and validation
+        try {
+          mappedRow[mapping.templateField.name] = this.convertValue(value, mapping.templateField.dataType);
+        } catch (error) {
+          errors.push({
+            row: rowIndex + 1,
+            field: mapping.templateField.displayName,
+            error: `Data type conversion failed: ${error}`,
+            value
+          });
+          hasError = true;
+        }
+      });
+
+      // Process unmapped template fields - only check for required field errors, don't add to result
+      unmappedTemplateFields.forEach(mapping => {
+        if (mapping.templateField.required) {
           errors.push({
             row: rowIndex + 1,
             field: mapping.templateField.displayName,
@@ -218,6 +232,14 @@ export class MappingService {
           });
           hasError = true;
         }
+        // Note: Unmapped template fields are NOT added to the result
+      });
+
+      // Process unmapped Excel columns - add their actual data
+      unmappedExcelColumns.forEach(column => {
+        const value = row[column.name];
+        // Use Excel column name as key for unmapped Excel data
+        mappedRow[`excel_${column.name}`] = value !== undefined ? value : null;
       });
 
       if (!hasError) {
@@ -368,6 +390,42 @@ export class MappingService {
       default:
         return value;
     }
+  }
+
+  getColumnOrder(): string[] {
+    const session = this.currentSessionSubject.value;
+    if (!session) return [];
+
+    // Mapped template fields first
+    const mappedFields = session.mappings
+      .filter(m => m.excelColumn)
+      .map(m => m.templateField.name);
+    
+    // Skip unmapped template fields - they are not included in the result
+
+    // Unmapped Excel columns second (columns not mapped to any template field)
+    const mappedExcelColumnNames = session.mappings
+      .filter(m => m.excelColumn)
+      .map(m => m.excelColumn!.name);
+    
+    const unmappedExcelColumns = session.excelColumns
+      .filter(col => !mappedExcelColumnNames.includes(col.name))
+      .map(col => `excel_${col.name}`);
+
+    return [...mappedFields, ...unmappedExcelColumns];
+  }
+
+  getUnmappedExcelColumns(): string[] {
+    const session = this.currentSessionSubject.value;
+    if (!session) return [];
+
+    const mappedExcelColumnNames = session.mappings
+      .filter(m => m.excelColumn)
+      .map(m => m.excelColumn!.name);
+    
+    return session.excelColumns
+      .filter(col => !mappedExcelColumnNames.includes(col.name))
+      .map(col => col.name);
   }
 
   private generateId(): string {

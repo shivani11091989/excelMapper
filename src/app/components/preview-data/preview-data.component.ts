@@ -50,13 +50,18 @@ export class PreviewDataComponent implements OnInit {
   getTableHeaders(): string[] {
     if (!this.session) return [];
     
-    return this.session.mappings
-      .filter(mapping => mapping.excelColumn)
-      .map(mapping => mapping.templateField.name);
+    // Use the same column order as the mapping service
+    return this.mappingService.getColumnOrder();
   }
 
   getFieldDisplayName(fieldName: string): string {
     if (!this.session) return fieldName;
+    
+    // Check if this is an unmapped Excel column (prefixed with 'excel_')
+    if (fieldName.startsWith('excel_')) {
+      const originalColumnName = fieldName.replace('excel_', '');
+      return `${originalColumnName} (Excel Column)`;
+    }
     
     const mapping = this.session.mappings.find(m => m.templateField.name === fieldName);
     return mapping?.templateField.displayName || fieldName;
@@ -65,8 +70,25 @@ export class PreviewDataComponent implements OnInit {
   isRequiredField(fieldName: string): boolean {
     if (!this.session) return false;
     
+    // Unmapped Excel columns are never required
+    if (fieldName.startsWith('excel_')) {
+      return false;
+    }
+    
     const mapping = this.session.mappings.find(m => m.templateField.name === fieldName);
     return mapping?.templateField.required || false;
+  }
+
+  isFieldMapped(fieldName: string): boolean {
+    if (!this.session) return false;
+    
+    // Unmapped Excel columns are considered "mapped" since they have data
+    if (fieldName.startsWith('excel_')) {
+      return true;
+    }
+    
+    const mapping = this.session.mappings.find(m => m.templateField.name === fieldName);
+    return mapping?.excelColumn !== null && mapping?.excelColumn !== undefined;
   }
 
   formatCellValue(value: any): string {
@@ -92,6 +114,19 @@ export class PreviewDataComponent implements OnInit {
     return this.session.mappings.filter(m => m.excelColumn).length;
   }
 
+  getTotalFieldsCount(): number {
+    if (!this.session) return 0;
+    return this.session.mappings.length;
+  }
+
+  getUnmappedExcelColumns(): string[] {
+    return this.mappingService.getUnmappedExcelColumns();
+  }
+
+  getUnmappedExcelColumnsCount(): number {
+    return this.getUnmappedExcelColumns().length;
+  }
+
   getRequiredFieldsCount(): number {
     if (!this.session) return 0;
     return this.session.mappings.filter(m => m.templateField.required).length;
@@ -100,12 +135,24 @@ export class PreviewDataComponent implements OnInit {
   getCompletionRate(): number {
     if (!this.session || this.previewData.length === 0) return 0;
     
-    const totalCells = this.previewData.length * this.getMappedFieldsCount();
+    const totalCells = this.previewData.length * this.getTotalFieldsCount();
     const emptyCells = this.qualityIssues.filter(issue => 
       issue.message.includes('empty') || issue.message.includes('missing')
     ).length;
     
-    return Math.round(((totalCells - emptyCells) / totalCells) * 100);
+    // Count cells with null values for unmapped fields
+    let unmappedEmptyCells = 0;
+    this.previewData.forEach(row => {
+      this.session!.mappings.forEach(mapping => {
+        if (!mapping.excelColumn && (row[mapping.templateField.name] === null || row[mapping.templateField.name] === undefined)) {
+          unmappedEmptyCells++;
+        }
+      });
+    });
+    
+    const totalEmptyCells = emptyCells + unmappedEmptyCells;
+    
+    return Math.round(((totalCells - totalEmptyCells) / totalCells) * 100);
   }
 
   proceedToExport(): void {

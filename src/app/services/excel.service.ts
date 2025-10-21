@@ -94,15 +94,57 @@ export class ExcelService {
     return 'string';
   }
 
-  exportToExcel(data: any[], filename: string): void {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+  exportToExcel(data: any[], filename: string, columnOrder?: string[]): void {
+    if (data.length === 0) {
+      console.warn('No data to export');
+      return;
+    }
+    
+    let worksheet: XLSX.WorkSheet;
+    
+    if (columnOrder && columnOrder.length > 0) {
+      // Create worksheet with specific column order
+      const orderedData = data.map(row => {
+        const orderedRow: any = {};
+        columnOrder.forEach(key => {
+          orderedRow[key] = row[key];
+        });
+        return orderedRow;
+      });
+      worksheet = XLSX.utils.json_to_sheet(orderedData, { header: columnOrder });
+    } else {
+      // Default behavior
+      worksheet = XLSX.utils.json_to_sheet(data);
+    }
+    
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Mapped Data');
     XLSX.writeFile(workbook, `${filename}.xlsx`);
   }
 
-  exportToCSV(data: any[], filename: string): void {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+  exportToCSV(data: any[], filename: string, columnOrder?: string[]): void {
+    if (data.length === 0) {
+      console.warn('No data to export');
+      return;
+    }
+    
+    let worksheet: XLSX.WorkSheet;
+    
+    if (columnOrder && columnOrder.length > 0) {
+      // Create worksheet with specific column order
+      const orderedData = data.map(row => {
+        const orderedRow: any = {};
+        columnOrder.forEach(key => {
+          orderedRow[key] = row[key];
+        });
+        return orderedRow;
+      });
+      worksheet = XLSX.utils.json_to_sheet(orderedData, { header: columnOrder });
+    } else {
+      // Default behavior
+      worksheet = XLSX.utils.json_to_sheet(data);
+    }
+    
     const csv = XLSX.utils.sheet_to_csv(worksheet);
     this.downloadFile(csv, `${filename}.csv`, 'text/csv');
   }
@@ -123,12 +165,12 @@ export class ExcelService {
   }
 
   // Additional methods expected by components
-  downloadAsCSV(data: any[], filename: string): void {
-    this.exportToCSV(data, filename.replace('.csv', ''));
+  downloadAsCSV(data: any[], filename: string, columnOrder?: string[]): void {
+    this.exportToCSV(data, filename.replace('.csv', ''), columnOrder);
   }
 
-  downloadAsXLSX(data: any[], filename: string): void {
-    this.exportToExcel(data, filename.replace('.xlsx', ''));
+  downloadAsXLSX(data: any[], filename: string, columnOrder?: string[]): void {
+    this.exportToExcel(data, filename.replace('.xlsx', ''), columnOrder);
   }
 
   downloadAsJSON(data: any[], filename: string): void {

@@ -160,6 +160,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .detail-item {
@@ -171,6 +172,58 @@
 
 .detail-item strong {
   color: var(--text-color);
+}
+
+.fields-info {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1.5rem;
+}
+
+.unmapped-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.notice-icon {
+  color: var(--warning-color);
+  font-size: 1.2rem;
+}
+
+.unmapped-fields {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.unmapped-fields strong {
+  color: var(--text-color);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.field-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin: 0.2rem 0.2rem 0.2rem 0;
+}
+
+.field-tag.excluded-field {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--error-color);
+  border: 1px solid rgba(244, 67, 54, 0.4);
+  text-decoration: line-through;
 }
 
 .data-preview {
