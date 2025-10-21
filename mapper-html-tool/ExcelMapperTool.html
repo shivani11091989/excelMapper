@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to IAH Template Mapper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            /* Wireframe-inspired Color Scheme */
+            --primary-color: #0f766e;        /* Teal 700 */
+            --primary-light: #14b8a6;        /* Teal 500 */
+            --primary-dark: #0d9488;         /* Teal 600 */
+            --secondary-color: #1e293b;      /* Slate 800 */
+            --secondary-light: #334155;      /* Slate 700 */
+            --accent-color: #7c3aed;         /* Violet 600 */
+            --success-color: #059669;        /* Emerald 600 */
+            --success-light: #10b981;        /* Emerald 500 */
+            --error-color: #dc2626;          /* Red 600 */
+            --warning-color: #ea580c;        /* Orange 600 */
+            --info-color: #0284c7;           /* Sky 600 */
+            
+            /* Background Colors */
+            --background-primary: #f8fafc;   /* Slate 50 */
+            --background-secondary: #f1f5f9; /* Slate 100 */
+            --background-tertiary: #e2e8f0;  /* Slate 200 */
+            --sidebar-color: #1e293b;        /* Slate 800 */
+            
+            /* Text Colors */
+            --text-primary: #0f172a;         /* Slate 900 */
+            --text-secondary: #475569;       /* Slate 600 */
+            --text-tertiary: #64748b;        /* Slate 500 */
+            --text-muted: #94a3b8;           /* Slate 400 */
+            
+            /* Border & Card Colors */
+            --border-light: #e2e8f0;         /* Slate 200 */
+            --border-medium: #cbd5e1;        /* Slate 300 */
+            --border-dark: #94a3b8;          /* Slate 400 */
+            --card-background: #ffffff;
+            --card-hover: #f8fafc;
+            
+            /* Shadows */
+            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--background-primary) 0%, var(--background-secondary) 50%, var(--background-tertiary) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100vw;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            flex-shrink: 0;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+
+        .header h1 {
+            color: white;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 120px);
+        }
+
+        .step {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            display: none;
+            position: relative;
+            min-height: calc(100vh - 200px);
+        }
+
+        .step.active {
+            display: flex;
+            flex-direction: column;
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .step-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* File Upload Styles */
+        .upload-area {
+            border: 2px dashed var(--border-medium);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--card-background) 0%, var(--background-primary) 100%);
+            position: relative;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(30, 64, 175, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-area:hover::before, .upload-area.dragover::before {
+            opacity: 1;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary-light);
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-light);
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .upload-text {
+            color: var(--text-color);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .upload-text strong {
+            color: var(--primary-color);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background: var(--text-muted);
+        }
+
+        .btn.btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+        }
+
+        .btn.btn-success:hover {
+            background: linear-gradient(135deg, #047857 0%, var(--success-color) 100%);
+        }
+
+        .btn.btn-secondary {
+            background: linear-gradient(135deg, var(--text-secondary) 0%, var(--secondary-light) 100%);
+        }
+
+        .btn.btn-secondary:hover {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--text-secondary) 100%);
+        }
+
+        /* Mapping Styles */
+        .mapping-container-dropdown {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .mapping-list {
+            background: linear-gradient(135deg, var(--background-primary) 0%, var(--background-secondary) 100%);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+            height: 100%;
+        }
+
+        .mapping-list h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mapping-list h3::before {
+            content: '🔗';
+            font-size: 1rem;
+        }
+
+        .mapping-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: var(--card-background);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .mapping-row:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+            border-color: var(--primary-light);
+        }
+
+        .excel-column-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .excel-column-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .excel-column-sample {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--background-secondary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .mapping-arrow {
+            font-size: 1.5rem;
+            color: var(--primary-light);
+            font-weight: bold;
+        }
+
+        .mapping-select {
+            flex: 1;
+            min-width: 220px;
+            padding: 0.75rem;
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--card-background);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .mapping-select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+        }
+
+        .mapping-select.required {
+            border-color: var(--error-color);
+            background: #fef2f2;
+        }
+
+        .mapping-select.mapped {
+            border-color: var(--success-color);
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .mapping-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-shrink: 0;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, var(--card-background) 0%, var(--background-primary) 100%);
+            padding: 1.25rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .info-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Preview Styles */
+        .preview-table {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tbody tr:nth-child(even):hover {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+        }
+
+        .empty-cell {
+            color: var(--text-secondary);
+            font-style: italic;
+            background: #f3f4f6;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .excel-column-cell {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            color: var(--success-color);
+            font-weight: 600;
+            border-left: 4px solid var(--success-color);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: #f1f5f9;
+            border-radius: 8px;
+            height: 8px;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            background: var(--success-color);
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-light);
+            flex-shrink: 0;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .alert::before {
+            font-size: 1.25rem;
+        }
+
+        .alert.error {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            color: var(--error-color);
+            border-left-color: var(--error-color);
+        }
+
+        .alert.error::before {
+            content: '❌';
+        }
+
+        .alert.success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+        }
+
+        .alert.success::before {
+            content: '✅';
+        }
+
+        .alert.info {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .alert.info::before {
+            content: 'ℹ️';
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: #e5e7eb;
+            border-radius: 8px;
+            height: 8px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--success-color) 0%, var(--success-light) 100%);
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .mapping-info {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.25rem;
+            }
+            
+            .header p {
+                font-size: 1.1rem;
+            }
+            
+            .mapping-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .mapping-arrow {
+                transform: rotate(90deg);
+                align-self: center;
+                font-size: 1.5rem;
+            }
+            
+            .excel-column-info {
+                min-width: auto;
+            }
+            
+            .mapping-select {
+                min-width: auto;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 2rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.875rem;
+            }
+            
+            .step {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+            
+            .mapping-list {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Excel to IAH Template Mapper</h1>
+            <p>Map your Excel data to Industrial Asset Hub template format</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Step 1: File Upload -->
+        <div class="step active" id="step1">
+            <h2><span class="step-number">1</span>Upload Excel File</h2>
+            <div class="step-content">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
+                     ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="upload-icon">📊</div>
+                    <div class="upload-text">
+                        <strong>Drag and drop your Excel file here</strong><br>
+                        or click to browse files
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+                </div>
+                <div id="fileInfo" class="hidden" style="margin-top: 1rem;">
+                    <div class="alert info">
+                        <strong>File loaded:</strong> <span id="fileName"></span><br>
+                        <strong>Sheets:</strong> <span id="sheetCount"></span> | 
+                        <strong>Rows:</strong> <span id="rowCount"></span> | 
+                        <strong>Columns:</strong> <span id="columnCount"></span>
+                    </div>
+                </div>
+                <div class="navigation">
+                    <div></div>
+                    <button class="btn" id="continueToMapping" onclick="goToStep(2)" disabled>Continue to Mapping</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Column Mapping -->
+        <div class="step" id="step2">
+            <h2><span class="step-number">2</span>Map Columns</h2>
+            <div class="step-content">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                    Select the corresponding IAH template field for each Excel column using the dropdown menus. Leave as "No Mapping" if the column should not be mapped.
+                </p>
+                
+                <div class="mapping-info">
+                    <div class="info-card">
+                        <div class="info-number" id="mappedCount">0</div>
+                        <div class="info-label">Mapped Fields</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-number" id="requiredCount">1</div>
+                        <div class="info-label">Required Fields</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-number" id="completionRate">0%</div>
+                        <div class="info-label">Completion</div>
+                    </div>
+                </div>
+
+                <div class="mapping-container-dropdown">
+                    <div class="mapping-list">
+                        <h3>Column Mapping</h3>
+                        <div id="mappingDropdowns"></div>
+                    </div>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="goToStep(1)">Back to Upload</button>
+                    <button class="btn" id="continueToPreview" onclick="goToStep(3)" disabled>Continue to Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Preview Data -->
+        <div class="step" id="step3">
+            <h2><span class="step-number">3</span>Preview Mapped Data</h2>
+            <div class="step-content">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                    Review your mapped data before export. Green cells contain Excel data, gray cells are empty unmapped fields.
+                </p>
+
+                <div id="previewAlert" class="alert info">
+                    <strong>Preview:</strong> Showing first 10 rows of your mapped data.
+                </div>
+
+                <div class="preview-table">
+                    <table id="previewTable">
+                        <thead id="previewHeader"></thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn btn-secondary" onclick="goToStep(2)">Back to Mapping</button>
+                    <button class="btn btn-success" onclick="exportData()">Export Data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Export Complete -->
+        <div class="step" id="step4">
+            <h2><span class="step-number">4</span>Export Complete</h2>
+            <div class="step-content">
+                <div class="alert success">
+                    <strong>Success!</strong> Your mapped data has been exported successfully.
+                </div>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <button class="btn btn-success" onclick="downloadExcel()">Download Excel (.xlsx)</button>
+                    <button class="btn btn-secondary" onclick="downloadCSV()" style="margin-left: 1rem;">Download CSV</button>
+                </div>
+
+                <div class="navigation">
+                    <button class="btn" onclick="startOver()">Start Over</button>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+        </div> <!-- End Main Content -->
+    </div>
+
+    <script>
+        // Global variables
+        let excelData = null;
+        let excelColumns = [];
+        let mappings = {};
+        let selectedColumn = null;
+        let selectedField = null;
+
+        // IAH Template Fields
+        const templateFields = [
+            { name: 'mac_address', displayName: 'MAC Address', required: true, description: 'MAC address of the asset' },
+            { name: 'name', displayName: 'Configured Asset Name', required: false, description: 'The engineered name i.e hostname/profinet name' },
+            { name: 'product_family', displayName: 'Device Type', required: false, description: 'Product family eg. Scalance 1500' },
+            { name: 'description', displayName: 'Description', required: false, description: 'Description of the asset' },
+            { name: 'serial_number', displayName: 'Serial Number', required: false, description: 'Serial number of the asset' },
+            { name: 'manufacturer', displayName: 'Manufacturer Name', required: false, description: 'Asset manufacturer' },
+            { name: 'product_version', displayName: 'Product Version', required: false, description: 'Hardware version of the asset' },
+            { name: 'firmware_version', displayName: 'Firmware Version', required: false, description: 'Firmware version of the asset' },
+            { name: 'network_mask', displayName: 'Subnet Mask', required: false, description: 'Subnet Mask of the asset' },
+            { name: 'gateway', displayName: 'Gateway', required: false, description: 'Gateway IP address' },
+            { name: 'ip_address', displayName: 'IPv4 Address', required: false, description: 'IPv4 Address of the asset' }
+        ];
+
+        // File handling functions
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get first worksheet
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert to JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length === 0) {
+                        alert('Excel file is empty');
+                        return;
+                    }
+                    
+                    // Process data
+                    const headers = jsonData[0];
+                    const dataRows = jsonData.slice(1).filter(row => 
+                        row && row.some(cell => cell !== undefined && cell !== null && cell !== '')
+                    );
+                    
+                    // Store data
+                    excelData = dataRows.map(row => {
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header || `Column ${index + 1}`] = row[index];
+                        });
+                        return obj;
+                    });
+                    
+                    // Store columns
+                    excelColumns = headers.map((header, index) => ({
+                        name: header || `Column ${index + 1}`,
+                        index: index,
+                        sampleData: dataRows.slice(0, 3).map(row => row[index]).filter(val => val !== undefined)
+                    }));
+                    
+                    // Update UI
+                    document.getElementById('fileName').textContent = file.name;
+                    document.getElementById('sheetCount').textContent = workbook.SheetNames.length;
+                    document.getElementById('rowCount').textContent = dataRows.length;
+                    document.getElementById('columnCount').textContent = headers.length;
+                    document.getElementById('fileInfo').classList.remove('hidden');
+                    document.getElementById('continueToMapping').disabled = false;
+                    
+                } catch (error) {
+                    alert('Error reading Excel file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Navigation functions
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            
+            // Show target step
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // Initialize step-specific content
+            if (step === 2) {
+                initializeMappingStep();
+            } else if (step === 3) {
+                initializePreviewStep();
+            }
+        }
+
+        // Mapping functions
+        function initializeMappingStep() {
+            const mappingContainer = document.getElementById('mappingDropdowns');
+            mappingContainer.innerHTML = '';
+            
+            excelColumns.forEach((column, index) => {
+                const mappingRow = document.createElement('div');
+                mappingRow.className = 'mapping-row';
+                
+                // Excel column info
+                const columnInfo = document.createElement('div');
+                columnInfo.className = 'excel-column-info';
+                columnInfo.innerHTML = `
+                    <div class="excel-column-name">${column.name}</div>
+                    <div class="excel-column-sample">Sample: ${column.sampleData.slice(0, 2).join(', ')}</div>
+                `;
+                
+                // Arrow
+                const arrow = document.createElement('div');
+                arrow.className = 'mapping-arrow';
+                arrow.textContent = '→';
+                
+                // Dropdown select
+                const select = document.createElement('select');
+                select.className = 'mapping-select';
+                select.id = `mapping-${index}`;
+                
+                // Add "No Mapping" option
+                const noMappingOption = document.createElement('option');
+                noMappingOption.value = '';
+                noMappingOption.textContent = 'No Mapping';
+                select.appendChild(noMappingOption);
+                
+                // Add template field options
+                templateFields.forEach(field => {
+                    const option = document.createElement('option');
+                    option.value = field.name;
+                    option.textContent = `${field.displayName}${field.required ? ' *' : ''}`;
+                    select.appendChild(option);
+                });
+                
+                // Set current mapping if exists
+                const currentMapping = mappings[column.name];
+                if (currentMapping) {
+                    select.value = currentMapping;
+                    select.classList.add('mapped');
+                }
+                
+                // Add change event listener
+                select.addEventListener('change', (e) => handleMappingChange(column.name, e.target.value, select));
+                
+                // Assemble row
+                mappingRow.appendChild(columnInfo);
+                mappingRow.appendChild(arrow);
+                mappingRow.appendChild(select);
+                
+                mappingContainer.appendChild(mappingRow);
+            });
+            
+            updateMappingUI();
+        }
+
+        function handleMappingChange(columnName, fieldName, selectElement) {
+            // Remove any existing mapping for this field
+            if (fieldName) {
+                Object.keys(mappings).forEach(key => {
+                    if (mappings[key] === fieldName && key !== columnName) {
+                        delete mappings[key];
+                        // Update the select element for the previously mapped column
+                        const prevSelect = document.querySelector(`select[value="${fieldName}"]`);
+                        if (prevSelect && prevSelect !== selectElement) {
+                            prevSelect.value = '';
+                            prevSelect.classList.remove('mapped');
+                        }
+                    }
+                });
+            }
+            
+            // Update or remove mapping
+            if (fieldName) {
+                mappings[columnName] = fieldName;
+                selectElement.classList.add('mapped');
+            } else {
+                delete mappings[columnName];
+                selectElement.classList.remove('mapped');
+            }
+            
+            // Update all select elements to prevent duplicates
+            document.querySelectorAll('.mapping-select').forEach(select => {
+                if (select !== selectElement && select.value === fieldName && fieldName) {
+                    select.value = '';
+                    select.classList.remove('mapped');
+                }
+            });
+            
+            updateMappingUI();
+        }
+
+        function updateMappingUI() {
+            // Update statistics
+            const mappedCount = Object.keys(mappings).length;
+            const requiredFields = templateFields.filter(f => f.required);
+            const mappedRequiredCount = requiredFields.filter(f => Object.values(mappings).includes(f.name)).length;
+            const completionRate = requiredFields.length > 0 ? Math.round((mappedRequiredCount / requiredFields.length) * 100) : 100;
+            
+            document.getElementById('mappedCount').textContent = mappedCount;
+            document.getElementById('requiredCount').textContent = requiredFields.length;
+            document.getElementById('completionRate').textContent = `${completionRate}%`;
+            
+            // Enable/disable continue button - allow continuation if at least one field is mapped
+            const canContinue = mappedCount > 0;
+            document.getElementById('continueToPreview').disabled = !canContinue;
+        }
+
+        // Preview functions
+        function initializePreviewStep() {
+            generatePreviewData();
+        }
+
+        function generatePreviewData() {
+            const previewData = [];
+            
+            // Process each row
+            excelData.slice(0, 10).forEach(row => {
+                const mappedRow = {};
+                
+                // Add only mapped template fields (exclude unmapped template fields)
+                Object.entries(mappings).forEach(([columnName, fieldName]) => {
+                    mappedRow[fieldName] = row[columnName] || null;
+                });
+                
+                // Add unmapped Excel columns
+                excelColumns.forEach(column => {
+                    if (!mappings[column.name]) {
+                        mappedRow[column.name] = row[column.name] || null;
+                    }
+                });
+                
+                previewData.push(mappedRow);
+            });
+            
+            // Render preview table
+            renderPreviewTable(previewData);
+        }
+
+        function renderPreviewTable(data) {
+            const table = document.getElementById('previewTable');
+            const header = document.getElementById('previewHeader');
+            const body = document.getElementById('previewBody');
+            
+            // Clear existing content
+            header.innerHTML = '';
+            body.innerHTML = '';
+            
+            if (data.length === 0) return;
+            
+            // Create headers
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach(key => {
+                const th = document.createElement('th');
+                const field = templateFields.find(f => f.name === key);
+                if (field) {
+                    th.textContent = field.displayName;
+                } else {
+                    th.textContent = key;
+                }
+                headerRow.appendChild(th);
+            });
+            header.appendChild(headerRow);
+            
+            // Create data rows
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.entries(row).forEach(([key, value]) => {
+                    const td = document.createElement('td');
+                    if (value === null || value === undefined || value === '') {
+                        td.textContent = '(empty)';
+                        td.className = 'empty-cell';
+                    } else {
+                        td.textContent = String(value);
+                        // Check if this is an unmapped Excel column (not a template field)
+                        const isTemplateField = templateFields.some(f => f.name === key);
+                        if (!isTemplateField) {
+                            td.className = 'excel-column-cell';
+                        }
+                    }
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+        }
+
+        // Export functions
+        function exportData() {
+            // Process all data for export
+            const exportData = [];
+            
+            excelData.forEach(row => {
+                const mappedRow = {};
+                
+                // Add only mapped template fields (exclude unmapped template fields)
+                Object.entries(mappings).forEach(([columnName, fieldName]) => {
+                    mappedRow[fieldName] = row[columnName] || null;
+                });
+                
+                // Add unmapped Excel columns
+                excelColumns.forEach(column => {
+                    if (!mappings[column.name]) {
+                        mappedRow[column.name] = row[column.name] || null;
+                    }
+                });
+                
+                exportData.push(mappedRow);
+            });
+            
+            // Store for download
+            window.exportedData = exportData;
+            
+            // Go to export step
+            goToStep(4);
+        }
+
+        function downloadExcel() {
+            const ws = XLSX.utils.json_to_sheet(window.exportedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Mapped Data");
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            XLSX.writeFile(wb, `excel-mapper-export-${timestamp}.xlsx`);
+        }
+
+        function downloadCSV() {
+            const ws = XLSX.utils.json_to_sheet(window.exportedData);
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            a.download = `excel-mapper-export-${timestamp}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function startOver() {
+            // Reset all data
+            excelData = null;
+            excelColumns = [];
+            mappings = {};
+            selectedColumn = null;
+            selectedField = null;
+            window.exportedData = null;
+            
+            // Reset form
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('continueToMapping').disabled = true;
+            
+            // Go back to step 1
+            goToStep(1);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Excel to IAH Template Mapper loaded successfully!');
+        });
+    </script>
+</body>
+</html>
