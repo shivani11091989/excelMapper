@@ -95,7 +95,7 @@
                 <option value="">Select Column...</option>
                 <option *ngFor="let column of getAvailableColumns(mapping)" 
                         [value]="column.name">
-                  {{column.name}} ({{column.dataType}})
+                  {{column.name}}
                 </option>
               </select>
             </div>
@@ -115,13 +115,7 @@
                 {{sample}}
               </span>
             </div>
-            <div class="type-compatibility">
-              <span class="compatibility-indicator" 
-                    [class.compatible]="isTypeCompatible(mapping.excelColumn.dataType, mapping.templateField.dataType)"
-                    [class.incompatible]="!isTypeCompatible(mapping.excelColumn.dataType, mapping.templateField.dataType)">
-                {{mapping.excelColumn.dataType}} → {{mapping.templateField.dataType}}
-              </span>
-            </div>
+
           </div>
           
           <div class="drop-zone" *ngIf="!mapping.excelColumn">

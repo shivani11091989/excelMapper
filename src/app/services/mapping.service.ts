@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { 
   MappingSession, 
   TemplateField, 
@@ -10,6 +11,7 @@ import {
   ExportError,
   DataQualityIssue
 } from '../models/mapping.model';
+import { ApiService, Suggestion } from './api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,35 +19,37 @@ import {
 export class MappingService {
   private currentSessionSubject = new BehaviorSubject<MappingSession | null>(null);
   public currentSession$ = this.currentSessionSubject.asObservable();
+  private currentDataId: string | null = null;
+  private uploadedFile: File | null = null;
 
   private templateFields: TemplateField[] = [
     {
-      name: 'mac_address',
-      displayName: 'MAC address',
-      dataType: 'string',
-      required: true,
-      description: 'MAC address of the asset'
-    },
-    {
-      name: 'name',
-      displayName: 'Configured asset name',
+      name: 'asset_name',
+      displayName: 'Asset name',
       dataType: 'string',
       required: false,
-      description: 'the engineered name i.e hostname/profinet name'
+      description: 'Name of the asset'
     },
     {
-      name: 'product_family',
-      displayName: 'Device type',
+      name: 'asset_family',
+      displayName: 'Asset family',
       dataType: 'string',
       required: false,
-      description: 'product_family eg. Scalanace 1500'
+      description: 'Asset family or category'
     },
     {
-      name: 'description ',
-      displayName: 'Description ',
+      name: 'description',
+      displayName: 'Description',
       dataType: 'string',
       required: false,
       description: 'Description of the asset'
+    },
+    {
+      name: 'mac_address',
+      displayName: 'MAC address*',
+      dataType: 'string',
+      required: true,
+      description: 'MAC address of the asset'
     },
     {
       name: 'serial_number',
@@ -55,15 +59,15 @@ export class MappingService {
       description: 'Serial number of the asset'
     },
     {
-      name: 'manufacturer',
-      displayName: 'Manufacturer name',
+      name: 'vendor',
+      displayName: 'Vendor',
       dataType: 'string',
       required: false,
-      description: 'Asset manufacturer'
+      description: 'Vendor or manufacturer of the asset'
     },
     {
-      name: 'product_version',
-      displayName: 'Product version',
+      name: 'hardware_version',
+      displayName: 'Hardware version',
       dataType: 'string',
       required: false,
       description: 'Hardware version of the asset'
@@ -76,11 +80,11 @@ export class MappingService {
       description: 'Firmware version of the asset'
     },
     {
-      name: 'network_mask',
-      displayName: 'Subnet Mask',
+      name: 'subnet_mask',
+      displayName: 'Subnet mask',
       dataType: 'string',
       required: false,
-      description: 'Subnet Mask of the asset'
+      description: 'Subnet mask of the asset'
     },
     {
       name: 'gateway',
@@ -91,12 +95,29 @@ export class MappingService {
     },
     {
       name: 'ip_address',
-      displayName: 'IPv4 Address',
+      displayName: 'IP address',
       dataType: 'string',
       required: false,
-      description: 'IPv4 Address of the asset'
+      description: 'IP address of the asset'
     }
   ];
+
+  constructor(private apiService: ApiService) {}
+
+  setUploadedFile(file: File): void {
+    this.uploadedFile = file;
+  }
+
+  getDataId(): string | null {
+    return this.currentDataId;
+  }
+
+  /**
+   * Check AI server health status
+   */
+  checkServerHealth(): Observable<any> {
+    return this.apiService.checkHealth();
+  }
 
   createSession(fileName: string, excelColumns: ExcelColumn[], excelData: any[]): MappingSession {
     const session: MappingSession = {
@@ -238,8 +259,8 @@ export class MappingService {
       // Process unmapped Excel columns - add their actual data
       unmappedExcelColumns.forEach(column => {
         const value = row[column.name];
-        // Use Excel column name as key for unmapped Excel data
-        mappedRow[`excel_${column.name}`] = value !== undefined ? value : null;
+        // Use original Excel column name as key for unmapped Excel data
+        mappedRow[column.name] = value !== undefined ? value : null;
       });
 
       if (!hasError) {
@@ -410,7 +431,7 @@ export class MappingService {
     
     const unmappedExcelColumns = session.excelColumns
       .filter(col => !mappedExcelColumnNames.includes(col.name))
-      .map(col => `excel_${col.name}`);
+      .map(col => col.name);
 
     return [...mappedFields, ...unmappedExcelColumns];
   }
@@ -458,7 +479,140 @@ export class MappingService {
     this.currentSessionSubject.next(null);
   }
 
-  generateAiSuggestions(session: MappingSession): AiSuggestion[] {
+  /**
+   * Upload file to server and get data_id for AI suggestions
+   */
+  uploadFileToServer(): Observable<string> {
+    if (!this.uploadedFile) {
+      return throwError(() => new Error('No file uploaded'));
+    }
+
+    const metadata = JSON.stringify({
+      template: 'IAH_Asset_Template',
+      fields: this.templateFields
+    });
+
+    return this.apiService.uploadData(this.uploadedFile, metadata).pipe(
+      map(response => {
+        this.currentDataId = response.data_id;
+        return response.data_id;
+      }),
+      catchError(error => {
+        console.error('Error uploading file:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get AI suggestions from server
+   */
+  getAiSuggestionsFromServer(): Observable<AiSuggestion[]> {
+    if (!this.currentDataId) {
+      return throwError(() => new Error('No data uploaded'));
+    }
+
+    return this.apiService.getSuggestions(this.currentDataId).pipe(
+      map(response => this.convertApiSuggestionsToAiSuggestions(response.suggestions)),
+      catchError(error => {
+        console.error('Error getting AI suggestions:', error);
+        // Fallback to local suggestions if API fails
+        const session = this.getCurrentSession();
+        if (session) {
+          return of(this.generateLocalAiSuggestions(session));
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Submit feedback to server about AI suggestions
+   */
+  submitFeedbackToServer(acceptedSuggestions: AiSuggestion[], rejectedSuggestions: AiSuggestion[]): Observable<any> {
+    if (!this.currentDataId) {
+      return throwError(() => new Error('No data uploaded'));
+    }
+
+    const feedbackItems = [
+      ...acceptedSuggestions.map(suggestion => ({
+        column_name: suggestion.suggestedColumn.name,
+        matched_schema_field: suggestion.templateField.name,
+        is_correct: true
+      })),
+      ...rejectedSuggestions.map(suggestion => ({
+        column_name: suggestion.suggestedColumn.name,
+        matched_schema_field: suggestion.templateField.name,
+        is_correct: false
+      }))
+    ];
+
+    return this.apiService.submitFeedback(this.currentDataId, { feedback: feedbackItems }).pipe(
+      catchError(error => {
+        console.error('Error submitting feedback:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Validate final mappings with server
+   */
+  validateMappingsWithServer(): Observable<any> {
+    if (!this.currentDataId) {
+      return throwError(() => new Error('No data uploaded'));
+    }
+
+    const session = this.getCurrentSession();
+    if (!session) {
+      return throwError(() => new Error('No active session'));
+    }
+
+    const validatedMappings = session.mappings
+      .filter(mapping => mapping.excelColumn)
+      .map(mapping => ({
+        column_name: mapping.excelColumn!.name,
+        mapped_field: mapping.templateField.name
+      }));
+
+    return this.apiService.validateMapping(this.currentDataId, { validated_mappings: validatedMappings }).pipe(
+      catchError(error => {
+        console.error('Error validating mappings:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Convert API suggestions to internal AiSuggestion format
+   */
+  private convertApiSuggestionsToAiSuggestions(apiSuggestions: Suggestion[]): AiSuggestion[] {
+    const session = this.getCurrentSession();
+    if (!session) return [];
+
+    const suggestions: AiSuggestion[] = [];
+
+    apiSuggestions.forEach(apiSuggestion => {
+      const templateField = this.templateFields.find(f => f.name === apiSuggestion.matched_schema_field);
+      const excelColumn = session.excelColumns.find(c => c.name === apiSuggestion.column_name);
+
+      if (templateField && excelColumn) {
+        suggestions.push({
+          templateField,
+          suggestedColumn: excelColumn,
+          confidence: apiSuggestion.confidence_score * 100, // Convert to percentage
+          reason: `AI ${apiSuggestion.matcher_type} match with ${(apiSuggestion.confidence_score * 100).toFixed(1)}% confidence`
+        });
+      }
+    });
+
+    return suggestions;
+  }
+
+  /**
+   * Fallback method for local AI suggestions (original implementation)
+   */
+  generateLocalAiSuggestions(session: MappingSession): AiSuggestion[] {
     if (!session) return [];
 
     const suggestions: AiSuggestion[] = [];
@@ -476,6 +630,14 @@ export class MappingService {
     });
 
     return suggestions;
+  }
+
+  /**
+   * Legacy method - now calls getAiSuggestionsFromServer
+   */
+  generateAiSuggestions(session: MappingSession): AiSuggestion[] {
+    // This is kept for backward compatibility but should use the async version
+    return this.generateLocalAiSuggestions(session);
   }
 
   generateExportResult(session: MappingSession): any {

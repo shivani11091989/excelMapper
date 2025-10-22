@@ -1,13 +1,28 @@
 <div class="container" *ngIf="session">
   <div class="suggestions-header">
     <h1>AI Mapping Suggestions</h1>
-    <p>Review and accept AI-generated column mappings</p>
-    <button class="btn btn-secondary regenerate-btn" (click)="regenerateSuggestions()">
-      Regenerate Suggestions
+    <p>Review and accept AI-generated column mappings from the server</p>
+    <button class="btn btn-secondary regenerate-btn" 
+            (click)="regenerateSuggestions()"
+            [disabled]="isLoading">
+      {{isLoading ? 'Getting Suggestions...' : 'Regenerate Suggestions'}}
     </button>
   </div>
 
-  <div class="suggestions-list" *ngIf="suggestions.length > 0">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Getting AI suggestions from server...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="error">
+    <div class="alert alert-warning">
+      <strong>Warning:</strong> {{error}}
+    </div>
+  </div>
+
+  <div class="suggestions-list" *ngIf="suggestions.length > 0 && !isLoading">
     <div class="suggestion-item" *ngFor="let suggestion of suggestions; let i = index">
       <div class="suggestion-content">
         <div class="suggestion-info">
@@ -49,7 +64,6 @@
             <h4>Template Field</h4>
             <div class="detail-card">
               <p><strong>Name:</strong> {{suggestion.templateField.displayName}}</p>
-              <p><strong>Type:</strong> {{suggestion.templateField.dataType}}</p>
               <p><strong>Required:</strong> {{suggestion.templateField.required ? 'Yes' : 'No'}}</p>
               <p *ngIf="suggestion.templateField.description" class="description">
                 <strong>Description:</strong> {{suggestion.templateField.description}}
@@ -72,7 +86,7 @@
     </div>
   </div>
 
-  <div class="no-suggestions" *ngIf="suggestions.length === 0">
+  <div class="no-suggestions" *ngIf="suggestions.length === 0 && !isLoading">
     <div class="no-suggestions-content">
       <h3>No AI Suggestions Available</h3>
       <p>The AI couldn't find confident matches for your columns. You can:</p>
@@ -80,6 +94,7 @@
         <li>Go back to manual mapping</li>
         <li>Try regenerating suggestions</li>
         <li>Check if your column names are descriptive</li>
+        <li>Ensure server connection is working</li>
       </ul>
     </div>
   </div>

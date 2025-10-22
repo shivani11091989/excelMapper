@@ -98,6 +98,9 @@ export class FileUploadComponent {
           this.excelColumns = result.columns;
           this.isProcessing = false;
           
+          // Store the uploaded file in mapping service for API upload
+          this.mappingService.setUploadedFile(this.selectedFile!);
+          
           // Create mapping session
           const session = this.mappingService.createSession(
             this.selectedFile!.name,
