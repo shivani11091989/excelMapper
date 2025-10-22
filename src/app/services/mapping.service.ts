@@ -587,25 +587,57 @@ export class MappingService {
    * Convert API suggestions to internal AiSuggestion format
    */
   private convertApiSuggestionsToAiSuggestions(apiSuggestions: Suggestion[]): AiSuggestion[] {
+    console.log('Converting API suggestions:', apiSuggestions);
     const session = this.getCurrentSession();
     if (!session) return [];
 
+    // Log available template fields and excel columns for debugging
+    console.log('Available template fields:', this.templateFields.map(f => f.displayName));
+    console.log('Available excel columns:', session.excelColumns.map(c => c.name));
+
     const suggestions: AiSuggestion[] = [];
 
-    apiSuggestions.forEach(apiSuggestion => {
-      const templateField = this.templateFields.find(f => f.name === apiSuggestion.matched_schema_field);
-      const excelColumn = session.excelColumns.find(c => c.name === apiSuggestion.column_name);
+    apiSuggestions.forEach((apiSuggestion, index) => {
+      // Match by displayName since API returns displayName format
+      let templateField = this.templateFields.find(f => f.displayName === apiSuggestion.matched_schema_field);
+      let excelColumn = session.excelColumns.find(c => c.name === apiSuggestion.column_name);
 
-      if (templateField && excelColumn) {
-        suggestions.push({
-          templateField,
-          suggestedColumn: excelColumn,
-          confidence: apiSuggestion.confidence_score * 100, // Convert to percentage
-          reason: `AI ${apiSuggestion.matcher_type} match with ${(apiSuggestion.confidence_score * 100).toFixed(1)}% confidence`
-        });
+      console.log(`[${index}] Processing: "${apiSuggestion.column_name}" -> "${apiSuggestion.matched_schema_field}"`);
+
+      // Create fallback objects if not found - let user decide if they're valid
+      if (!templateField) {
+        console.log(`[${index}] ⚠️ Template field not found, creating fallback for: "${apiSuggestion.matched_schema_field}"`);
+        templateField = {
+          name: apiSuggestion.matched_schema_field.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+          displayName: apiSuggestion.matched_schema_field,
+          dataType: 'string',
+          required: false,
+          description: `AI suggested field: ${apiSuggestion.matched_schema_field}`
+        };
       }
+
+      if (!excelColumn) {
+        console.log(`[${index}] ⚠️ Excel column not found, creating fallback for: "${apiSuggestion.column_name}"`);
+        excelColumn = {
+          name: apiSuggestion.column_name,
+          dataType: 'string',
+          sampleData: [],
+          index: -1  // Fallback index for non-existent columns
+        };
+      }
+
+      // Always create the suggestion - let user decide validity
+      suggestions.push({
+        templateField: templateField!,
+        suggestedColumn: excelColumn!,
+        confidence: apiSuggestion.confidence_score * 100, // Convert to percentage
+        reason: `AI ${apiSuggestion.matcher_type} match with ${(apiSuggestion.confidence_score * 100).toFixed(1)}% confidence`
+      });
+
+      console.log(`[${index}] ✅ Added suggestion: ${excelColumn!.name} -> ${templateField!.displayName}`);
     });
 
+    console.log(`🎯 Final conversion result: ${suggestions.length} suggestions from ${apiSuggestions.length} API suggestions`);
     return suggestions;
   }
 
@@ -652,20 +684,5 @@ export class MappingService {
       errorsFound: result.errorsFound,
       errors: result.errors
     };
-  }
-
-  private generateMockValue(dataType: string, index: number): any {
-    switch (dataType) {
-      case 'string':
-        return `Sample ${dataType} ${index + 1}`;
-      case 'number':
-        return (index + 1) * 100;
-      case 'date':
-        return new Date(2024, 0, index + 1).toISOString().split('T')[0];
-      case 'boolean':
-        return index % 2 === 0;
-      default:
-        return `Value ${index + 1}`;
-    }
   }
 }
