@@ -52,9 +52,13 @@ export class SchemaMappingComponent implements OnInit {
     
     const columnData = event.dataTransfer?.getData('text/plain');
     if (columnData) {
-      const column: ExcelColumn = JSON.parse(columnData);
-      this.mappingService.mapColumnToField(column, templateField);
-      this.validateMappings();
+      try {
+        const column: ExcelColumn = JSON.parse(columnData);
+        this.mappingService.mapColumnToField(column, templateField);
+        this.validateMappings();
+      } catch (error) {
+        console.error('Invalid column data:', error);
+      }
     }
   }
 
